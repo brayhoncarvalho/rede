@@ -63,7 +63,7 @@ import PjDadosEmpresaScreen from './components/pj/PjDadosEmpresaScreen.vue'
 import PjRepresentanteScreen from './components/pj/PjRepresentanteScreen.vue'
 import PjContratoAssinadoScreen from './components/pj/PjContratoAssinadoScreen.vue'
 import type { Screen, PjView, AccessPayload, SimulacaoState, OfertaState, PjPropostaDados, PjOfertaData } from './types'
-import { FALLBACK_SCREEN, VALID_SCREENS, TAXA_MENSAL_PADRAO, TAXA_CET_DELTA, PJ_ONBOARDING_SCREENS } from './config/constants'
+import { FALLBACK_SCREEN, VALID_SCREENS, TAXA_MENSAL_PADRAO, TAXA_CET_DELTA } from './config/constants'
 import { formatCurrencyBRL, formatMonthlyRate, formatAnnualRateFromMonthly } from './utils/formatters'
 import { calculatePricePMT, withCetDelta } from './lib/financeCalculations'
 
@@ -118,29 +118,17 @@ const getScreenFromQuery = (): Screen => {
   return fallbackScreen
 }
 
-const hasPjQueryFlag = () =>
-  new URLSearchParams(window.location.search).get('isPJ') === 'true'
-
-const isPjFlowScreen = (screen: Screen) =>
-  (screen as string).startsWith('pj-') || PJ_ONBOARDING_SCREENS.includes(screen)
-
 const updateScreenQuery = (screen: Screen) => {
   const url = new URL(window.location.href)
   url.searchParams.set('screen', screen)
-  const keepPjMode = hasPjQueryFlag() || isPjFlowScreen(screen)
-  if (keepPjMode) {
-    url.searchParams.set('isPJ', 'true')
-  } else {
-    url.searchParams.delete('isPJ')
-  }
+  url.searchParams.delete('isPJ')
   url.hash = ''
   window.history.replaceState({}, '', url)
 }
 
 const currentScreen = ref<Screen>(getScreenFromQuery())
-// Modo PJ: ativado por ?isPJ=true, telas pj-* ou telas do fluxo de onboarding PJ.
-const isPjMode = computed(() => hasPjQueryFlag() || isPjFlowScreen(currentScreen.value))
-const isPjOnboarding = computed(() => isPjMode.value)
+// Tema/branding PJ fixos em toda a aplicação.
+const isPjMode = computed(() => true)
 
 const baseUrl = import.meta.env.BASE_URL
 
@@ -321,7 +309,7 @@ const handleAuthNav = (action: 'sair' | 'emprestimos' | 'meus-dados') => {
 </script>
 
 <template>
-  <div class="min-h-screen w-full bg-white" :class="{ 'theme-pj': isPjOnboarding }">
+  <div class="min-h-screen w-full bg-white theme-pj">
     <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
     <template v-if="currentScreen === 'pj-dashboard'">
       <PjDashboardScreen @navigate="goToPjScreen" />
