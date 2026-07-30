@@ -62,7 +62,7 @@ import PjPropostaOfertaScreen from './components/pj/PjPropostaOfertaScreen.vue'
 import PjDadosEmpresaScreen from './components/pj/PjDadosEmpresaScreen.vue'
 import PjRepresentanteScreen from './components/pj/PjRepresentanteScreen.vue'
 import PjContratoAssinadoScreen from './components/pj/PjContratoAssinadoScreen.vue'
-import type { Screen, PjView, AccessChannel, AccessPayload, SimulacaoState, OfertaState, PjPropostaDados, PjOfertaData } from './types'
+import type { Screen, PjView, AccessPayload, SimulacaoState, OfertaState, PjPropostaDados, PjOfertaData } from './types'
 import { FALLBACK_SCREEN, VALID_SCREENS, TAXA_MENSAL_PADRAO, TAXA_CET_DELTA, PJ_ONBOARDING_SCREENS } from './config/constants'
 import { formatCurrencyBRL, formatMonthlyRate, formatAnnualRateFromMonthly } from './utils/formatters'
 import { calculatePricePMT, withCetDelta } from './lib/financeCalculations'
@@ -118,32 +118,29 @@ const getScreenFromQuery = (): Screen => {
   return fallbackScreen
 }
 
+const hasPjQueryFlag = () =>
+  new URLSearchParams(window.location.search).get('isPJ') === 'true'
+
+const isPjFlowScreen = (screen: Screen) =>
+  (screen as string).startsWith('pj-') || PJ_ONBOARDING_SCREENS.includes(screen)
+
 const updateScreenQuery = (screen: Screen) => {
   const url = new URL(window.location.href)
   url.searchParams.set('screen', screen)
+  const keepPjMode = hasPjQueryFlag() || isPjFlowScreen(screen)
+  if (keepPjMode) {
+    url.searchParams.set('isPJ', 'true')
+  } else {
+    url.searchParams.delete('isPJ')
+  }
   url.hash = ''
   window.history.replaceState({}, '', url)
 }
 
 const currentScreen = ref<Screen>(getScreenFromQuery())
-
-const PJ_ONBOARDING_SCREENS: Screen[] = [
-  'pj-proposta-contratacao', 'pj-proposta-oferta', 'pj-dados-empresa', 'pj-representante',
-  'pj-contrato-assinado', 'dados-acesso', 'senha', 'endereco-telefone',
-  'envio-documentos', 'revisao', 'contrato',
-]
-
-// Modo PJ: ativado via ?isPJ=true na URL, por qualquer tela pj-*, ou pelo fluxo de onboarding PJ
-const isPjMode = ref(
-  new URLSearchParams(window.location.search).get('isPJ') === 'true' ||
-  (getScreenFromQuery() as string).startsWith('pj-')
-)
-watch(currentScreen, (screen) => {
-  if ((screen as string).startsWith('pj-') || PJ_ONBOARDING_SCREENS.includes(screen)) {
-    isPjMode.value = true
-  }
-})
-const isPjOnboarding = computed(() => isPjMode.value || PJ_ONBOARDING_SCREENS.includes(currentScreen.value))
+// Modo PJ: ativado por ?isPJ=true, telas pj-* ou telas do fluxo de onboarding PJ.
+const isPjMode = computed(() => hasPjQueryFlag() || isPjFlowScreen(currentScreen.value))
+const isPjOnboarding = computed(() => isPjMode.value)
 
 const baseUrl = import.meta.env.BASE_URL
 
