@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [vue()],
-  base: '/jornadacompleta/',
-})
+  // Dev mantém o path atual; build aponta para o projeto no GitHub Pages.
+  base: command === 'serve' ? '/jornadacompleta/' : '/rede/',
+}))
